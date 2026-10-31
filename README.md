@@ -40,3 +40,37 @@ A simple MERN project that lets the user insert, update, delete & get products f
 ### 4. DELETE (Deleting a product)
    ![image](https://github.com/mhy20401/Inventory-Management-System-MERN-CRUD-Project/assets/99351091/d846ff43-6abd-4baa-9ed6-df736f2d411e)
    ![image](https://github.com/mhy20401/Inventory-Management-System-MERN-CRUD-Project/assets/99351091/cc6368bd-f391-4d6b-b814-c931d48a0878)
+
+
+---
+
+## CI/CD & Containerization
+
+This application is equipped with automated Continuous Integration & Continuous Delivery via **GitHub Actions** and **Docker**.
+
+### 1. Local Testing with Docker Compose
+To run the entire stack (Frontend, Backend, and MongoDB) in isolated containers:
+```bash
+docker compose up --build
+```
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:3001`
+- MongoDB: `mongodb://localhost:27017`
+
+### 2. Continuous Integration (`ci.yml`)
+Runs automatically on every Pull Request and Push to `main`:
+- **Backend Quality**: Runs automated route and health tests.
+- **Frontend Quality**: Executes React component unit tests and verifies production asset compilation.
+- **Container Validation**: Builds multi-stage Docker images to verify build integrity.
+
+### 3. Continuous Delivery & Deployment (`cd.yml`)
+Runs automatically on merges to `main` (and via manual workflow trigger):
+- **Image Publishing**: Builds optimized Docker images and pushes to GitHub Container Registry (`ghcr.io`).
+- **Production Deployment**: Triggers deployment via configurable repository secret `DEPLOY_WEBHOOK_URL` (compatible with Render, Railway, CapRover, Coolify, or VPS webhook).
+- **Automated Health Check**: Pings `PRODUCTION_URL/healthz` to verify deployment health.
+
+#### Configurable GitHub Secrets:
+| Secret Name | Description | Required |
+| :--- | :--- | :--- |
+| `DEPLOY_WEBHOOK_URL` | Webhook URL from hosting provider to trigger deployment | Optional |
+| `PRODUCTION_URL` | Live URL of the deployed application for health verification | Optional |

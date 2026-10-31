@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import API_BASE_URL from '../config'
 
 export default function Products() {
 
@@ -12,7 +13,7 @@ export default function Products() {
     const getProducts = async (e) => {
 
         try {
-            const res = await fetch("http://localhost:3001/products", {
+            const res = await fetch(`${API_BASE_URL}/products`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json"
@@ -21,7 +22,7 @@ export default function Products() {
 
             const data = await res.json();
 
-            if (res.status === 201) {
+            if (res.status === 200 || res.status === 201) {
                 console.log("Data Retrieved.");
                 setProductData(data);
             }
@@ -35,7 +36,7 @@ export default function Products() {
 
     const deleteProduct = async (id) => {
 
-        const response = await fetch(`http://localhost:3001/deleteproduct/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/deleteproduct/${id}`, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
@@ -56,14 +57,12 @@ export default function Products() {
 
     return (
         <>
-
-
             <div className='container-fluid p-5'>
                 <h1>Products Inventory</h1>
                 <div className='add_button'>
-                    <NavLink to="/insertproduct" className='btn btn-primary fs-5'> + Add New Product</NavLink>
+                    <NavLink to="/insertproduct" className='btn btn-primary fs-5'> + Add Products</NavLink>
                 </div>
-                <div className="overflow-auto mt-3" style={{ maxHeight: "38rem" }}>
+                <div className="overflow-auto mt-4">
                     <table className="table table-striped table-hover mt-3 fs-5">
                         <thead>
                             <tr className="tr_color">
@@ -76,32 +75,24 @@ export default function Products() {
                             </tr>
                         </thead>
                         <tbody>
-
                             {
                                 productData.map((element, id) => {
                                     return (
-                                        <>
-                                            <tr>
-                                                <th scope="row">{id + 1}</th>
-                                                <td>{element.ProductName}</td>
-                                                <td>{element.ProductPrice}</td>
-                                                <td>{element.ProductBarcode}</td>
-
-                                                <td><NavLink to={`/updateproduct/${element._id}`} className="btn btn-primary"><i className="fa-solid fa-pen-to-square"></i></NavLink></td>
-                                                <td><button className="btn btn-danger" onClick={() => deleteProduct(element._id)}><i class="fa-solid fa-trash"></i></button></td>
-
-                                            </tr>
-                                        </>
+                                        <tr key={id}>
+                                            <th scope="row">{id + 1}</th>
+                                            <td>{element.ProductName}</td>
+                                            <td>{element.ProductPrice}</td>
+                                            <td>{element.ProductBarcode}</td>
+                                            <td><NavLink to={`/updateproduct/${element._id}`} className="btn btn-primary"><i className="fa-solid fa-pen-to-square"></i></NavLink></td>
+                                            <td><button className="btn btn-danger" onClick={() => deleteProduct(element._id)}><i className="fa-solid fa-trash"></i></button></td>
+                                        </tr>
                                     )
                                 })
                             }
-
                         </tbody>
                     </table>
                 </div>
-
             </div>
-
         </>
     )
 }

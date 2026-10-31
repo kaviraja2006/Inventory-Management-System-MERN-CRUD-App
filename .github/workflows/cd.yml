@@ -1,0 +1,113 @@
+name: Continuous Delivery & Deployment (CD)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    name: Build & Push Images to GHCR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Downcase Repository Name
+        id: repo_name
+        run: echo "IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      # --- Backend Container ---
+      - name: Extract Backend Metadata
+        id: meta_backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/backend
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build & Push Backend Container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend
+          file: ./Backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta_backend.outputs.tags }}
+          labels: ${{ steps.meta_backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --- Frontend Container ---
+      - name: Extract Frontend Metadata
+        id: meta_frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/frontend
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build & Push Frontend Container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Frontend/inventory_management_system
+          file: ./Frontend/inventory_management_system/Dockerfile
+          push: true
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Trigger Production Deployment
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Webhook Deploy (Render / Railway / Portainer / VPS)
+        if: env.DEPLOY_WEBHOOK_URL != ''
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          echo "Triggering deployment webhook..."
+          curl -s -X POST "$DEPLOY_WEBHOOK_URL"
+          echo "Deployment triggered successfully."
+
+      - name: Verify Health Check
+        if: env.PRODUCTION_URL != ''
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          echo "Awaiting application readiness at $PRODUCTION_URL/healthz ..."
+          for i in {1..12}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PRODUCTION_URL/healthz" || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Production application is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i: Status $STATUS, retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check failed after 120 seconds."
+          exit 1
+
+      - name: Deployment Instructions Notice
+        if: env.DEPLOY_WEBHOOK_URL == ''
+        run: |
+          echo "Images successfully published to GHCR!"
+          echo "To enable automated production deployments, configure 'DEPLOY_WEBHOOK_URL' and optionally 'PRODUCTION_URL' in GitHub Repository Secrets."
+

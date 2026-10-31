@@ -1,13 +1,23 @@
-const mongoose = require('mongoose')
-const mongoURI = "mongodb://127.0.0.1:27017/IMS";
+const mongoose = require('mongoose');
 
-const connectToMongo = async () => {
+const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/IMS";
+
+const connectToMongo = async (uri = mongoURI) => {
   try {
     mongoose.set("strictQuery", false);
-    mongoose.connect(mongoURI);
+    await mongoose.connect(uri);
     console.log("Connected to Mongo Successfully!");
   } catch (error) {
-    console.log(error);
+    console.error("MongoDB connection error:", error.message);
   }
 };
-module.exports = connectToMongo;
+
+const disconnectMongo = async () => {
+  try {
+    await mongoose.connection.close();
+  } catch (error) {
+    console.error("MongoDB disconnect error:", error.message);
+  }
+};
+
+module.exports = { connectToMongo, disconnectMongo };

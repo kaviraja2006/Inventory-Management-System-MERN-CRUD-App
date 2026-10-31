@@ -1,33 +1,34 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
-export default function InsertProduct() {
+export default function UpdateProduct() {
     const [productName, setProductName] = useState("");
     const [productPrice, setProductPrice] = useState();
     const [productBarcode, setProductBarcode] = useState();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const navigate = useNavigate("");
+    const navigate = useNavigate();
 
     const setName = (e) => {
         setProductName(e.target.value);
-      };
+    };
     
-      const setPrice = (e) => {
+    const setPrice = (e) => {
         setProductPrice(e.target.value);
-      };
+    };
     
-      const setBarcode = (e) => {
+    const setBarcode = (e) => {
         const value = e.target.value.slice(0, 12);
         setProductBarcode(value);
     };
 
-    const {id} = useParams("");
+    const { id } = useParams();
 
     useEffect(() => {
         const getProduct = async () => {
           try {
-            const res = await fetch(`http://localhost:3001/products/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/products/${id}`, {
               method: "GET",
               headers: {
                 "Content-Type": "application/json"
@@ -36,7 +37,7 @@ export default function InsertProduct() {
       
             const data = await res.json();
       
-            if (res.status === 201) {
+            if (res.status === 200 || res.status === 201) {
               console.log("Data Retrieved.");
               setProductName(data.ProductName);
               setProductPrice(data.ProductPrice);
@@ -49,7 +50,9 @@ export default function InsertProduct() {
           }
         };
       
-        getProduct();
+        if (id) {
+            getProduct();
+        }
     }, [id]);
 
     const updateProduct = async (e) => {
@@ -64,7 +67,7 @@ export default function InsertProduct() {
         setError("");
 
         try {
-            const response = await fetch(`http://localhost:3001/updateproduct/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/updateproduct/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -74,7 +77,7 @@ export default function InsertProduct() {
 
             await response.json();
 
-            if (response.status === 201) {
+            if (response.status === 200 || response.status === 201) {
                 alert("Data Updated");
                 navigate('/products');
             }

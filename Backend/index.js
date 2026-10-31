@@ -1,19 +1,21 @@
-const connectToMongo = require('./db')
+const app = require('./app');
+const { connectToMongo } = require('./db');
+
+const port = process.env.PORT || 3001;
+
+// Connect to MongoDB
 connectToMongo();
 
-const express = require('express')
-const app = express()
-const port = 3001
+const server = app.listen(port, () => {
+  console.log(`Inventory Management Backend listening on port ${port}`);
+});
 
-const cors = require('cors')
-const router = require('./Routes/router')
+// Graceful shutdown handling for containerized deployments
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
+});
 
-app.use(cors());
-app.use(express.json());
-app.use(router);
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-
-
+module.exports = server;
