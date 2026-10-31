@@ -6,7 +6,7 @@ test('renders navigation and brand title', () => {
   const brandTitle = screen.getByText(/IMS/i);
   expect(brandTitle).toBeInTheDocument();
   
-  const productsNav = screen.getByText(/Products/i);
+  const productsNav = screen.getByRole('link', { name: 'Products' });
   expect(productsNav).toBeInTheDocument();
 });
 
